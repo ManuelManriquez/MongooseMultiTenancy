@@ -70,16 +70,35 @@ class SaleController {
 
 	async create({ request, response, auth }) {
 		const { Sale, User } = await this.initModels(['sales', 'users'], request._qs.tenantId);
-
-		const sale = await new Sale({ name: "helpppp" });
-
-		await sale.save();
-
-		return response.status(201).send({
+	  
+		const session = await Sale.startSession();
+		session.startTransaction();
+	  
+		try {
+		  const sale = await new Sale({ name: "test3" });
+		  await sale.save();
+	  
+		  // Realiza más operaciones aquí si es necesario
+	  
+		  await session.commitTransaction();
+		  session.endSession();
+	  
+		  return response.status(201).send({
 			status: "success",
-			data: "!"
-		});
-	}
+			data: sale
+		  });
+		} catch (error) {
+		  await session.abortTransaction();
+		  session.endSession();
+	  
+		  return response.status(500).send({
+			status: "error",
+			message: "Error al crear la venta",
+			error: error.message
+		  });
+		}
+	  }
+	  
 }
 
 module.exports = SaleController
